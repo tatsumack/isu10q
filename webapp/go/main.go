@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -347,6 +348,14 @@ func main() {
 }
 
 func initialize(c echo.Context) error {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func () {
+		resp, _ := http.Post("http://10.164.28.103/initialize", "application/json", nil)
+		resp.Body.Close()
+		wg.Done()
+	}()
+
 	sqlDir := filepath.Join("..", "mysql", "db")
 	paths := []string{
 		filepath.Join(sqlDir, "0_Schema.sql"),
@@ -370,12 +379,7 @@ func initialize(c echo.Context) error {
 		}
 	}
 
-	resp, err := http.Post("http://10.164.28.103/initialize", "application/json", nil)
-	if err != nil {
-		c.Logger().Errorf("fail isu3 init: %v", err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	defer resp.Body.Close()
+	wg.Wait()
 
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "go",
