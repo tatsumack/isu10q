@@ -25,7 +25,7 @@ alter table isuumo.estate add index rent_id (rent, id);
 alter table isuumo.estate add index pop_rent (popularity,rent);
 alter table isuumo.estate add index doorheight (door_height);
 alter table isuumo.estate add index rent (rent);
-
+alter table isuumo.estate add index door_height_width_pop (door_width, door_height, popularity);
 
 CREATE TABLE isuumo.chair
 (

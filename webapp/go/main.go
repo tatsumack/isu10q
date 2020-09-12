@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -853,17 +854,45 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 	w := chair.Width
 	h := chair.Height
 	d := chair.Depth
-	query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT ?`
-	err = db.Select(&estates, query, w, h, w, d, h, w, h, d, d, w, d, h, Limit)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
-		}
-		c.Logger().Errorf("Database execution error : %v", err)
-		return c.NoContent(http.StatusInternalServerError)
+	type WH struct {
+		Width  int64
+		Height int64
+	}
+	vals := []WH{
+		{Width: w, Height: h},
+		{Width: w, Height: d},
+		{Width: h, Height: w},
+		{Width: h, Height: d},
+		{Width: d, Height: w},
+		{Width: d, Height: h},
 	}
 
-	return c.JSON(http.StatusOK, EstateListResponse{Estates: estates})
+	for _, val := range vals {
+		var tmp []Estate
+		query = `SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC LIMIT ?`
+		err = db.Select(&tmp, query, val.Width, val.Height, Limit)
+		if err != nil && err != sql.ErrNoRows {
+			c.Logger().Errorf("Database execution error : %v", err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		estates = append(estates, tmp...)
+	}
+	if len(estates) == 0 {
+		return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
+	}
+	sort.Slice(estates, func(i, j int) bool { return estates[i].Popularity > estates[j].Popularity })
+
+	var res []Estate
+	var found = map[int64]bool{}
+	for _, e := range estates {
+		if found[e.ID] {
+			continue
+		}
+		found[e.ID] = true
+		res = append(res, e)
+	}
+
+	return c.JSON(http.StatusOK, EstateListResponse{Estates: res})
 }
 
 func searchEstateNazotte(c echo.Context) error {
