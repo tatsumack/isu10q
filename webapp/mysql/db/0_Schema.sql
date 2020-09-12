@@ -23,6 +23,8 @@ CREATE TABLE isuumo.estate
 alter table isuumo.estate add index lat_long_pop (latitude, longitude, popularity);
 alter table isuumo.estate add index rent_id (rent, id);
 alter table isuumo.estate add index pop_rent (popularity,rent);
+alter table isuumo.estate add index doorheight (door_height);
+alter table isuumo.estate add index rent (rent);
 
 
 CREATE TABLE isuumo.chair
@@ -42,5 +44,7 @@ CREATE TABLE isuumo.chair
     stock       INTEGER         NOT NULL
 );
 
+alter table isuumo.chair add index heightStock (height,stock);
+alter table isuumo.chair add index kindStock (kind,stock);
 alter table isuumo.chair add index pop_pr_sto (popularity, price, stock);
 alter table isuumo.chair add index pr_id_st (price, id, stock);
