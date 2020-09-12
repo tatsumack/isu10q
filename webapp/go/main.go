@@ -351,8 +351,11 @@ func initialize(c echo.Context) error {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func () {
-		resp, _ := http.Post("http://10.164.28.103/initialize", "application/json", nil)
-		resp.Body.Close()
+		var resp *http.Response
+		if getEnv("ISU_HOST", "") == "isu2" {
+			resp, _ = http.Post("http://10.164.28.103/initialize", "application/json", nil)
+			resp.Body.Close()
+		}
 		wg.Done()
 	}()
 
