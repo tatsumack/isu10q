@@ -370,7 +370,7 @@ func initialize(c echo.Context) error {
 		}
 	}
 
-	resp, err := http.Get("http://10.164.28.103/initialize")
+	resp, err := http.Post("http://10.164.28.103/initialize", "application/json", nil)
 	if err != nil {
 		c.Logger().Errorf("fail isu3 init: %v", err)
 		return c.NoContent(http.StatusInternalServerError)
