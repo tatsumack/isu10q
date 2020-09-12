@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -245,9 +246,27 @@ func createCustomMiddleware(name string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			UA := c.Request().Header.Get("User-Agent")
-			if strings.HasPrefix(UA, "ISUCONbot") {
-				return c.String(http.StatusServiceUnavailable, "bot access is forbidden.")
+			targets := []string{
+				`ISUCONbot(-Mobile)?`,
+				`ISUCONbot-Image\/`,
+				`Mediapartners-ISUCON`,
+				`ISUCONCoffee`,
+				`ISUCONFeedSeeker(Beta)?`,
+				`crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)`,
+				`isubot`,
+				`Isupider`,
+				`Isupider(-image)?\+`,
+				`(?i)(bot|crawler|spider)(?:[-_ .\/;@()]|$)`,
 			}
+
+			for _, v := range targets {
+				r := regexp.MustCompile(v)
+				if r.MatchString(UA) {
+					return c.String(http.StatusServiceUnavailable, "bot access is forbidden.")
+				}
+			}
+
+
 			return next(c)
 		}
 	}
