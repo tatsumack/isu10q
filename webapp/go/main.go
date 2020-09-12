@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"os/exec"
@@ -921,8 +922,15 @@ func searchEstateNazotte(c echo.Context) error {
 
 	estatesInPolygon := []Estate{}
 	for _, estate := range estatesInBoundingBox {
-		validatedEstate := Estate{}
+		//validatedEstate := Estate{}
 
+		isHit := coordinates.isHit(c, Coordinate{ Latitude: estate.Latitude, Longitude: estate.Longitude})
+		if isHit {
+			estatesInPolygon = append(estatesInPolygon, estate)
+		}
+
+
+		/*
 		point := fmt.Sprintf("'POINT(%f %f)'", estate.Latitude, estate.Longitude)
 		query := fmt.Sprintf(`SELECT * FROM estate WHERE id = ? AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))`, coordinates.coordinatesToText(), point)
 		err = db.Get(&validatedEstate, query, estate.ID)
@@ -936,6 +944,7 @@ func searchEstateNazotte(c echo.Context) error {
 		} else {
 			estatesInPolygon = append(estatesInPolygon, validatedEstate)
 		}
+		*/
 	}
 
 	var re EstateSearchResponse
@@ -1021,4 +1030,61 @@ func (cs Coordinates) coordinatesToText() string {
 		points = append(points, fmt.Sprintf("%f %f", c.Latitude, c.Longitude))
 	}
 	return fmt.Sprintf("'POLYGON((%s))'", strings.Join(points, ","))
+}
+
+type Point struct {
+	x float64
+	y float64
+}
+
+
+// https://codepen.io/ykob/details/zxJjxg/
+func (cs Coordinates) isHit(c echo.Context, target Coordinate) bool {
+	p1 := Point {target.Latitude, target.Longitude}
+	comparison :=[]Point{}
+	for _, coordinate := range cs.Coordinates {
+		comparison = append(comparison, Point{coordinate.Latitude, coordinate.Longitude})
+	}
+
+	var deg = 0.0;
+	var p1x = p1.x;
+	var p1y = p1.y;
+
+	for index := 0; index < len(comparison); index++ {
+		var p2x = comparison[index].x;
+		var p2y = comparison[index].y;
+		p3x := 0.0;
+		p3y := 0.0;
+		if (index < len(comparison)- 1) {
+			p3x = comparison[index + 1].x;
+			p3y = comparison[index + 1].y;
+		} else {
+			p3x = comparison[0].x;
+			p3y = comparison[0].y;
+		}
+
+		var ax = p2x - p1x;
+		var ay = p2y - p1y;
+		var bx = p3x - p1x;
+		var by = p3y - p1y;
+
+		var cos = (ax * bx + ay * by) / (math.Sqrt(ax * ax + ay * ay) * math.Sqrt(bx * bx + by * by));
+		var d = math.Acos(cos) * (180/math.Pi);
+		if (math.IsNaN(d)) {
+			d = 0;
+		}
+		deg += d;
+	}
+
+	result := false;
+
+	if (math.Round(deg) == 360) {
+		result = true;
+	} else {
+		result = false;
+	}
+
+	//c.Logger().Info("degree:%v result:%v", deg, result)
+
+	return result;
 }
