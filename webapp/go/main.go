@@ -238,11 +238,27 @@ func init() {
 	json.Unmarshal(jsonText, &estateSearchCondition)
 }
 
+// create middleware function just to output message
+func createCustomMiddleware(name string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			UA := c.Request().Header.Get("User-Agent")
+			if strings.HasPrefix(UA, "ISUCONbot") {
+				return c.String(http.StatusServiceUnavailable, "bot access is forbidden.")
+			}
+			return next(c)
+		}
+	}
+}
+
 func main() {
 	// Echo instance
 	e := echo.New()
 	e.Debug = true
 	e.Logger.SetLevel(log.DEBUG)
+
+	// BAN bot access
+	e.Pre(createCustomMiddleware("Pre  "))
 
 	// Middleware
 	e.Use(middleware.Logger())

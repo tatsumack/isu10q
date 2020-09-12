@@ -14,8 +14,7 @@ WEB_SERVERS="isu1"
 APP_SERVERS="isu1"
 DB_SERVER="isu1"
 
-#BACKUP_TARGET_LIST="/var/lib/mysql/mysqld-slow.log /var/log/nginx/access.log /var/log/nginx/error.log"
-BACKUP_TARGET_LIST=""
+BACKUP_TARGET_LIST="/var/lib/mysql/mysqld-slow.log /var/log/nginx/access.log /var/log/nginx/error.log"
 
 BRANCH=$1
 if [ -z "$BRANCH" ]; then
