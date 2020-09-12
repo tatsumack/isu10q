@@ -10,11 +10,11 @@ LOG_BACKUP_DIR=/var/log/isucon
 USER=isucon
 KEY_OPTION="-A"
 
-WEB_SERVERS="isu1"
-APP_SERVERS="isu1"
-DB_SERVER="isu1"
+WEB_SERVERS="isu1 isu2"
+APP_SERVERS="isu1 isu2"
+DB_SERVERS="isu2"
 
-BACKUP_TARGET_LIST="/var/lib/mysql/mysqld-slow.log /var/log/nginx/access.log /var/log/nginx/error.log"
+BACKUP_TARGET_LIST="/var/log/nginx/access.log /var/log/nginx/error.log"
 
 BRANCH=$1
 if [ -z "$BRANCH" ]; then
@@ -39,9 +39,13 @@ EOS
 done
 
 echo "Stop DataBase Server"
+for DB_SERVER in $DB_SERVERS
+do
 cat <<EOS | ssh $KEY_OPTION $USER@$DB_SERVER sh
 sudo systemctl stop mysql
+sudo rm /var/lib/mysql/mysqld-slow.log
 EOS
+done
 
 echo "Get Current git hash"
 for APP_SERVER in $APP_SERVERS
@@ -89,11 +93,16 @@ git rev-parse --short HEAD
 EOS`
 echo "Current Hash: $new_hash"
 done
+
 echo "Start Database Server"
+for DB_SERVER in $DB_SERVERS
+do
 cat <<EOS | ssh $KEY_OPTION $USER@$DB_SERVER sh
 sudo swapoff -a && sudo swapon -a
 sudo systemctl start mysql
 EOS
+done
+
 echo "Start App Server"
 for APP_SERVER in $APP_SERVERS
 do
