@@ -882,7 +882,6 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 		return c.JSON(http.StatusOK, EstateListResponse{[]Estate{}})
 	}
 	sort.Slice(estates, func(i, j int) bool { return estates[i].Popularity > estates[j].Popularity })
-
 	var res []Estate
 	var found = map[int64]bool{}
 	for _, e := range estates {
@@ -892,6 +891,8 @@ func searchRecommendedEstateWithChair(c echo.Context) error {
 		found[e.ID] = true
 		res = append(res, e)
 	}
+
+	res = res[0:Limit]
 
 	return c.JSON(http.StatusOK, EstateListResponse{Estates: res})
 }
